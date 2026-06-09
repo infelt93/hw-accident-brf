@@ -66,6 +66,20 @@ http://localhost:3000/step/6  참고자료 생성 완료
 
 직접 진입 시 필요한 이전 단계 데이터는 `public/demo-photos`의 데모 사고 사진과 mock 분석 결과로 자동 보강됩니다.
 
+## GitHub Pages 배포
+
+이 프로젝트는 Vercel 없이 GitHub Pages 정적 배포도 지원합니다.
+
+배포 URL:
+
+```txt
+https://infelt93.github.io/hw-accident-brf/
+```
+
+`main` 브랜치에 push되면 `.github/workflows/deploy-pages.yml` 워크플로우가 실행되어 `GITHUB_PAGES=true npm run build`로 정적 export를 생성하고, `out` 폴더를 GitHub Pages에 배포합니다.
+
+GitHub Pages는 저장소 하위 경로(`/hw-accident-brf`)에서 서비스되므로, `GITHUB_PAGES=true`일 때 Next.js `basePath`와 정적 이미지 경로를 자동 보정합니다.
+
 정적 검증 및 프로덕션 빌드 확인:
 
 ```bash

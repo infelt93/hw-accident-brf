@@ -75,6 +75,8 @@ const appStepToRoutePath: Record<Step, string> = {
   complete: '/step/6'
 };
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+
 const stepOrder: Record<Step, number> = {
   home: 0,
   photos: 1,
@@ -85,6 +87,24 @@ const stepOrder: Record<Step, number> = {
   summary: 5,
   complete: 6
 };
+
+function withBasePath(path: string) {
+  if (!BASE_PATH) return path;
+  if (path === '/') return BASE_PATH || '/';
+  return `${BASE_PATH}${path}`;
+}
+
+function stripBasePath(pathname: string) {
+  if (!BASE_PATH) return pathname;
+  if (pathname === BASE_PATH) return '/';
+  if (pathname.startsWith(`${BASE_PATH}/`)) return pathname.slice(BASE_PATH.length) || '/';
+  return pathname;
+}
+
+function publicAssetPath(path: string) {
+  if (!BASE_PATH || path.startsWith('blob:') || path.startsWith('data:') || /^https?:\/\//.test(path)) return path;
+  return `${BASE_PATH}${path.startsWith('/') ? path : `/${path}`}`;
+}
 
 const uploadSlots: Array<{ slot: UploadSlot; label: string; description: string }> = [
   { slot: 'ownDamage', label: '내 차량 파손 사진', description: '파손 부위가 잘 보이는 사진을 추가하세요.' },
@@ -98,7 +118,7 @@ const demoPhotos: Partial<Record<UploadSlot, UploadedPhoto>> = {
     label: '내 차량 파손 사진',
     fileName: '내 차량 사진.png',
     size: 348_000,
-    previewUrl: '/demo-photos/own-car.png',
+    previewUrl: publicAssetPath('/demo-photos/own-car.png'),
     source: 'upload'
   },
   opponentVehicle: {
@@ -106,7 +126,7 @@ const demoPhotos: Partial<Record<UploadSlot, UploadedPhoto>> = {
     label: '상대 차량 사진',
     fileName: '상대방 차량.png',
     size: 292_000,
-    previewUrl: '/demo-photos/opponent.png',
+    previewUrl: publicAssetPath('/demo-photos/opponent.png'),
     source: 'upload'
   },
   scene: {
@@ -114,15 +134,17 @@ const demoPhotos: Partial<Record<UploadSlot, UploadedPhoto>> = {
     label: '사고 현장 사진',
     fileName: '사고 주변.png',
     size: 416_000,
-    previewUrl: '/demo-photos/scene.png',
+    previewUrl: publicAssetPath('/demo-photos/scene.png'),
     source: 'upload'
   }
 };
 
 function stepFromPathname(pathname: string): Step | null {
-  if (pathname === '/') return 'home';
+  const normalizedPathname = stripBasePath(pathname);
 
-  const match = pathname.match(/^\/step\/([1-6])\/?$/);
+  if (normalizedPathname === '/') return 'home';
+
+  const match = normalizedPathname.match(/^\/step\/([1-6])\/?$/);
   if (!match) return null;
 
   return routeStepToAppStep[match[1]] ?? null;
@@ -140,7 +162,7 @@ function previousStepFor(currentStep: Step): Step {
 function updateBrowserPath(step: Step, mode: 'push' | 'replace' = 'push') {
   if (typeof window === 'undefined') return;
 
-  const nextPath = appStepToRoutePath[step];
+  const nextPath = withBasePath(appStepToRoutePath[step]);
   if (window.location.pathname === nextPath) return;
 
   if (mode === 'replace') {

@@ -2,6 +2,9 @@ import Image from 'next/image';
 import type { ReactNode } from 'react';
 import { Notice } from './Notice';
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+const logoSrc = `${BASE_PATH}/hanwha-logo.png`;
+
 interface AppShellProps {
   children: ReactNode;
   stepLabel?: string;
@@ -32,7 +35,7 @@ export function AppShell({ children, stepLabel, stepNumber, totalSteps = 6, canG
             ) : null}
             <div className="flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-orange-100 bg-white p-1 shadow-sm">
               <Image
-                src="/hanwha-logo.png"
+                src={logoSrc}
                 alt="한화손해보험 로고"
                 width={58}
                 height={53}
