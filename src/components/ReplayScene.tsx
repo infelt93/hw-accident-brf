@@ -1,8 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Scenario } from '@/types/accident';
-import { Button } from './Button';
 
 interface ReplaySceneProps {
   scenario: Scenario;
@@ -139,7 +138,17 @@ function poseWithAutoRotation(scenario: Scenario, frameIndex: number, actorKey: 
   };
 }
 
-function Car({ pose, actor, mini }: { pose: { x: number; y: number; rotation: number }; actor: 'my' | 'other'; mini: boolean }) {
+function Car({
+  pose,
+  actor,
+  mini,
+  isLoopResetting
+}: {
+  pose: { x: number; y: number; rotation: number };
+  actor: 'my' | 'other';
+  mini: boolean;
+  isLoopResetting?: boolean;
+}) {
   const isMine = actor === 'my';
   const bodyFill = isMine ? '#f37321' : '#e11d48';
   const bodyStroke = isMine ? '#7c2d12' : '#9f1239';
@@ -150,7 +159,7 @@ function Car({ pose, actor, mini }: { pose: { x: number; y: number; rotation: nu
 
   return (
     <div
-      className="absolute z-20 transition-all duration-500 ease-out"
+      className={`absolute z-20 ${isLoopResetting ? 'transition-none' : 'transition-all duration-500 ease-out'}`}
       style={{
         left: `${pose.x}%`,
         top: `${pose.y}%`,
@@ -204,7 +213,7 @@ function Car({ pose, actor, mini }: { pose: { x: number; y: number; rotation: nu
 
 export function ReplayScene({ scenario, mode = 'full', title, backgroundImageUrl }: ReplaySceneProps) {
   const [frameIndex, setFrameIndex] = useState(mode === 'static' ? scenario.replay.frames.length - 1 : 0);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoopResetting, setIsLoopResetting] = useState(false);
   const frames = scenario.replay.frames;
   const safeFrameIndex = mode === 'static' ? frames.length - 1 : Math.min(frameIndex, frames.length - 1);
   const currentFrame = frames[safeFrameIndex] ?? frames[0];
@@ -216,28 +225,55 @@ export function ReplayScene({ scenario, mode = 'full', title, backgroundImageUrl
   const arrowMarkerIdMy = useMemo(() => `arrow-my-${scenario.id}-${mode}`, [scenario.id, mode]);
   const arrowMarkerIdOther = useMemo(() => `arrow-other-${scenario.id}-${mode}`, [scenario.id, mode]);
 
-  const play = () => {
-    if (isPlaying) return;
-    setIsPlaying(true);
-    setFrameIndex(0);
-    let next = 0;
+  useEffect(() => {
+    let initialFrameTimer: number | undefined;
+    let loopResetTimer: number | undefined;
+
+    if (mode === 'static') {
+      initialFrameTimer = window.setTimeout(() => setFrameIndex(frames.length - 1), 0);
+      return () => {
+        if (initialFrameTimer) window.clearTimeout(initialFrameTimer);
+      };
+    }
+
+    initialFrameTimer = window.setTimeout(() => {
+      setFrameIndex(0);
+      setIsLoopResetting(false);
+    }, 0);
+
+    if (frames.length <= 1) {
+      return () => {
+        if (initialFrameTimer) window.clearTimeout(initialFrameTimer);
+      };
+    }
+
     const timer = window.setInterval(() => {
-      next += 1;
-      setFrameIndex(Math.min(next, frames.length - 1));
-      if (next >= frames.length - 1) {
-        window.clearInterval(timer);
-        setIsPlaying(false);
-      }
-    }, mini ? 760 : 650);
-  };
+      setFrameIndex((previousFrameIndex) => {
+        if (previousFrameIndex >= frames.length - 1) {
+          setIsLoopResetting(true);
+          if (loopResetTimer) window.clearTimeout(loopResetTimer);
+          loopResetTimer = window.setTimeout(() => setIsLoopResetting(false), 80);
+          return 0;
+        }
+
+        return previousFrameIndex + 1;
+      });
+    }, mini ? 900 : 850);
+
+    return () => {
+      window.clearInterval(timer);
+      if (initialFrameTimer) window.clearTimeout(initialFrameTimer);
+      if (loopResetTimer) window.clearTimeout(loopResetTimer);
+    };
+  }, [frames.length, mini, mode, scenario.id]);
 
   return (
     <div className={mini ? 'space-y-3' : 'space-y-4'}>
       {title ? (
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-base font-black text-slate-950">{title}</h3>
-          {!mini ? (
-            <span className="rounded-full bg-hanwha-50 px-2.5 py-1 text-[10px] font-black text-hanwha-700">Top view</span>
+          {mode === 'full' ? (
+            <span className="rounded-full bg-hanwha-50 px-2.5 py-1 text-[10px] font-black text-hanwha-700">자동 루프</span>
           ) : null}
         </div>
       ) : null}
@@ -306,8 +342,8 @@ export function ReplayScene({ scenario, mode = 'full', title, backgroundImageUrl
               </g>
             ))}
           </svg>
-          <Car pose={myCarPose} actor="my" mini={mini} />
-          <Car pose={otherCarPose} actor="other" mini={mini} />
+          <Car pose={myCarPose} actor="my" mini={mini} isLoopResetting={isLoopResetting} />
+          <Car pose={otherCarPose} actor="other" mini={mini} isLoopResetting={isLoopResetting} />
           {currentFrame.collision ? (
             <div
               className="absolute z-30 -translate-x-1/2 -translate-y-1/2"
@@ -331,22 +367,17 @@ export function ReplayScene({ scenario, mode = 'full', title, backgroundImageUrl
       {mode === 'mini' ? (
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3 px-1">
-            <span className="text-[11px] font-black text-hanwha-700">현재 장면 · {currentFrame.label}</span>
+            <span className="text-[11px] font-black text-hanwha-700">자동 루프 재생 · {currentFrame.label}</span>
             <div className="flex gap-1" aria-label="미리보기 타임라인">
               {frames.map((frame, index) => (
-                <button
+                <span
                   key={frame.id}
-                  type="button"
-                  onClick={() => setFrameIndex(index)}
                   className={`h-2 w-5 rounded-full transition ${safeFrameIndex === index ? 'bg-hanwha-600' : 'bg-orange-100'}`}
-                  aria-label={`${frame.label} 보기`}
+                  aria-label={`${frame.label}${safeFrameIndex === index ? ' 현재' : ''}`}
                 />
               ))}
             </div>
           </div>
-          <Button fullWidth variant="secondary" onClick={play} disabled={isPlaying}>
-            {isPlaying ? '미리보기 재생 중...' : '▶ 이 시나리오 수동 재생'}
-          </Button>
         </div>
       ) : null}
 
@@ -359,20 +390,19 @@ export function ReplayScene({ scenario, mode = 'full', title, backgroundImageUrl
             </div>
             <div className="grid grid-cols-4 gap-2">
             {frames.map((frame, index) => (
-              <button
+              <div
                 key={frame.id}
-                className={`rounded-2xl px-2 py-2 text-[11px] font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hanwha-100 ${safeFrameIndex === index ? 'bg-hanwha-600 text-white shadow-md shadow-hanwha-600/20' : 'bg-orange-50 text-stone-600 hover:bg-orange-100'}`}
-                onClick={() => setFrameIndex(index)}
-                type="button"
+                className={`rounded-2xl px-2 py-2 text-center text-[11px] font-black transition ${safeFrameIndex === index ? 'bg-hanwha-600 text-white shadow-md shadow-hanwha-600/20' : 'bg-orange-50 text-stone-600'}`}
+                aria-current={safeFrameIndex === index ? 'step' : undefined}
               >
                 {frame.label}
-              </button>
+              </div>
             ))}
             </div>
           </div>
-          <Button fullWidth onClick={play} disabled={isPlaying}>
-            {isPlaying ? '상황 정리 재생 중...' : '▶ 사고 상황 정리 재생'}
-          </Button>
+          <div className="rounded-3xl border border-hanwha-100 bg-hanwha-50 px-4 py-3 text-center text-xs font-black text-hanwha-700">
+            2D 사고 상황 정리가 자동으로 반복 재생됩니다.
+          </div>
         </>
       ) : null}
     </div>

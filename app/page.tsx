@@ -1237,7 +1237,7 @@ export default function Home() {
                     <p className="text-xs font-black text-hanwha-600">{currentScenarioLabel} · {currentScenario.confidenceLabel}</p>
                     <h3 className="mt-1 text-lg font-black text-slate-950">{currentScenario.title}</h3>
                   </div>
-                  <span className="rounded-full bg-hanwha-50 px-3 py-1 text-[10px] font-black text-hanwha-700 shadow-sm">수동 재생</span>
+                  <span className="rounded-full bg-hanwha-50 px-3 py-1 text-[10px] font-black text-hanwha-700 shadow-sm">자동 루프</span>
                 </div>
 
                 <ReplayScene scenario={currentScenario} title="2D 사고 시뮬레이션" />
@@ -1270,7 +1270,7 @@ export default function Home() {
                           <p className="text-xs font-black text-hanwha-600">대안 시나리오 {index + 1} · {scenario.confidenceLabel}</p>
                           <h3 className="mt-1 text-base font-black text-slate-950">{scenario.title}</h3>
                         </div>
-                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black text-slate-500">수동 재생</span>
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black text-slate-500">자동 루프</span>
                       </div>
                       <ReplayScene scenario={scenario} mode="mini" />
                       <ul className="mt-3 space-y-1 px-1 text-xs font-semibold text-slate-600">
