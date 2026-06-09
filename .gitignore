@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# production / generated outputs
+output/
+outputs/
+tmp/
+
+# local runtime / orchestration state
+.omx/
+
+# env
+.env
+.env.*
+!.env.example
+
+# system / editor
+.DS_Store
+*.log
+.vscode/
+.idea/
+
+# misc
+coverage/
