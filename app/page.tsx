@@ -730,10 +730,29 @@ export default function Home() {
     navigate('analysis');
   };
 
-  const handleApplyDemoPhoto = (slot: UploadSlot, source: NonNullable<UploadedPhoto['source']>) => {
-    setPhotos((prev) => ({ ...prev, [slot]: createDemoPhoto(slot, source) }));
+  const resetPhotoDerivedState = () => {
     setPhotoAnalysis(null);
     setIsAnalysisEditOpen(false);
+    setScenarios([]);
+    setShowAlternativeScenarios(false);
+    setSelectedScenario(null);
+    setDraft(null);
+    setNarrativeResult(null);
+    setCustomerChecked(false);
+  };
+
+  const handleApplyDemoPhoto = (slot: UploadSlot, source: NonNullable<UploadedPhoto['source']>) => {
+    setPhotos((prev) => ({ ...prev, [slot]: createDemoPhoto(slot, source) }));
+    resetPhotoDerivedState();
+  };
+
+  const handleRemovePhoto = (slot: UploadSlot) => {
+    setPhotos((prev) => {
+      const nextPhotos = { ...prev };
+      delete nextPhotos[slot];
+      return nextPhotos;
+    });
+    resetPhotoDerivedState();
   };
 
   const handleConfirmAnalysis = () => {
@@ -1029,6 +1048,7 @@ export default function Home() {
                     {...slot}
                     photo={photos[slot.slot]}
                     onApplyDemoPhoto={(source) => handleApplyDemoPhoto(slot.slot, source)}
+                    onRemove={() => handleRemovePhoto(slot.slot)}
                   />
                 ))}
               </div>

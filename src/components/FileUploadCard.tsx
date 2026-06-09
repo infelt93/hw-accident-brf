@@ -1,5 +1,6 @@
 'use client';
 
+import type { ChangeEvent } from 'react';
 import type { UploadedPhoto, UploadSlot } from '@/types/accident';
 
 interface FileUploadCardProps {
@@ -8,10 +9,19 @@ interface FileUploadCardProps {
   description: string;
   photo?: UploadedPhoto;
   onApplyDemoPhoto: (source: NonNullable<UploadedPhoto['source']>) => void;
+  onRemove: () => void;
 }
 
-export function FileUploadCard({ label, description, photo, onApplyDemoPhoto }: FileUploadCardProps) {
+export function FileUploadCard({ label, description, photo, onApplyDemoPhoto, onRemove }: FileUploadCardProps) {
   const isUploaded = Boolean(photo);
+
+  const handleCameraCapture = (event: ChangeEvent<HTMLInputElement>) => {
+    const capturedFile = event.target.files?.[0];
+    if (!capturedFile) return;
+
+    onApplyDemoPhoto('camera');
+    event.currentTarget.value = '';
+  };
 
   return (
     <div
@@ -40,16 +50,27 @@ export function FileUploadCard({ label, description, photo, onApplyDemoPhoto }: 
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-black text-slate-900">{label}</p>
-            <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black ${isUploaded ? 'bg-hanwha-50 text-hanwha-700' : 'bg-white text-slate-500'}`}>
-              {isUploaded ? '추가됨' : '대기'}
-            </span>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${isUploaded ? 'bg-hanwha-50 text-hanwha-700' : 'bg-white text-slate-500'}`}>
+                {isUploaded ? '추가됨' : '대기'}
+              </span>
+              {isUploaded ? (
+                <button
+                  type="button"
+                  className="rounded-full border border-rose-100 bg-rose-50 px-2 py-0.5 text-[10px] font-black text-rose-600 transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-rose-100"
+                  onClick={onRemove}
+                >
+                  삭제
+                </button>
+              ) : null}
+            </div>
           </div>
           <p className="mt-1 text-xs leading-relaxed text-slate-500">{description}</p>
           {photo ? (
             <div className="mt-2 space-y-1">
               <p className="truncate rounded-full bg-hanwha-50 px-3 py-1 text-xs font-black text-hanwha-700">{photo.fileName}</p>
               <p className="text-[11px] font-bold text-slate-500">
-                {photo.source === 'camera' ? '카메라 버튼으로 테스트 이미지 적용됨' : '업로드 버튼으로 테스트 이미지 적용됨'}
+                {photo.source === 'camera' ? '촬영 완료 후 테스트 이미지 적용됨' : '업로드 버튼으로 테스트 이미지 적용됨'}
               </p>
             </div>
           ) : null}
@@ -64,13 +85,16 @@ export function FileUploadCard({ label, description, photo, onApplyDemoPhoto }: 
         >
           <span aria-hidden="true">＋</span>사진 업로드
         </button>
-        <button
-          type="button"
-          className="flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-hanwha-500 to-hanwha-700 px-3 py-2 text-xs font-black text-white shadow-sm transition hover:from-hanwha-600 hover:to-hanwha-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hanwha-100"
-          onClick={() => onApplyDemoPhoto('camera')}
-        >
+        <label className="flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-hanwha-500 to-hanwha-700 px-3 py-2 text-xs font-black text-white shadow-sm transition hover:from-hanwha-600 hover:to-hanwha-700 focus-within:ring-4 focus-within:ring-hanwha-100">
           <span aria-hidden="true">●</span>카메라 촬영
-        </button>
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="sr-only"
+            onChange={handleCameraCapture}
+          />
+        </label>
       </div>
     </div>
   );
