@@ -1,6 +1,5 @@
 'use client';
 
-import type { ChangeEvent } from 'react';
 import type { UploadedPhoto, UploadSlot } from '@/types/accident';
 
 interface FileUploadCardProps {
@@ -8,25 +7,11 @@ interface FileUploadCardProps {
   label: string;
   description: string;
   photo?: UploadedPhoto;
-  onChange: (photo: UploadedPhoto) => void;
+  onApplyDemoPhoto: (source: NonNullable<UploadedPhoto['source']>) => void;
 }
 
-export function FileUploadCard({ slot, label, description, photo, onChange }: FileUploadCardProps) {
+export function FileUploadCard({ label, description, photo, onApplyDemoPhoto }: FileUploadCardProps) {
   const isUploaded = Boolean(photo);
-
-  const handleChange = (event: ChangeEvent<HTMLInputElement>, source: 'upload' | 'camera') => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    onChange({
-      slot,
-      label,
-      fileName: file.name || `${label}-${source === 'camera' ? '촬영' : '업로드'}.jpg`,
-      size: file.size,
-      previewUrl: URL.createObjectURL(file),
-      source
-    });
-  };
 
   return (
     <div
@@ -36,7 +21,6 @@ export function FileUploadCard({ slot, label, description, photo, onChange }: Fi
           : 'border-dashed border-slate-300 bg-slate-50 hover:border-hanwha-400 hover:bg-hanwha-50/40'
       }`}
     >
-      <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-hanwha-50 opacity-0 transition group-hover:opacity-100" />
       <div className="flex items-center gap-3">
         {photo?.previewUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -65,7 +49,7 @@ export function FileUploadCard({ slot, label, description, photo, onChange }: Fi
             <div className="mt-2 space-y-1">
               <p className="truncate rounded-full bg-hanwha-50 px-3 py-1 text-xs font-black text-hanwha-700">{photo.fileName}</p>
               <p className="text-[11px] font-bold text-slate-500">
-                {photo.source === 'camera' ? '카메라 촬영 이미지로 업로드됨' : '앨범/파일에서 업로드됨'}
+                {photo.source === 'camera' ? '카메라 버튼으로 테스트 이미지 적용됨' : '업로드 버튼으로 테스트 이미지 적용됨'}
               </p>
             </div>
           ) : null}
@@ -73,20 +57,20 @@ export function FileUploadCard({ slot, label, description, photo, onChange }: Fi
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2">
-        <label className="flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 shadow-sm transition hover:bg-slate-100 focus-within:ring-4 focus-within:ring-hanwha-100">
+        <button
+          type="button"
+          className="flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 shadow-sm transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hanwha-100"
+          onClick={() => onApplyDemoPhoto('upload')}
+        >
           <span aria-hidden="true">＋</span>사진 업로드
-          <input type="file" accept="image/*" className="sr-only" onChange={(event) => handleChange(event, 'upload')} />
-        </label>
-        <label className="flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-hanwha-500 to-hanwha-700 px-3 py-2 text-xs font-black text-white shadow-sm transition hover:from-hanwha-600 hover:to-hanwha-700 focus-within:ring-4 focus-within:ring-hanwha-100">
+        </button>
+        <button
+          type="button"
+          className="flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-hanwha-500 to-hanwha-700 px-3 py-2 text-xs font-black text-white shadow-sm transition hover:from-hanwha-600 hover:to-hanwha-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hanwha-100"
+          onClick={() => onApplyDemoPhoto('camera')}
+        >
           <span aria-hidden="true">●</span>카메라 촬영
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="sr-only"
-            onChange={(event) => handleChange(event, 'camera')}
-          />
-        </label>
+        </button>
       </div>
     </div>
   );

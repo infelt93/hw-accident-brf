@@ -112,32 +112,52 @@ const uploadSlots: Array<{ slot: UploadSlot; label: string; description: string 
   { slot: 'scene', label: '사고 현장 사진', description: '도로, 차선, 주차면 등 현장 정보를 남깁니다.' }
 ];
 
-const demoPhotos: Partial<Record<UploadSlot, UploadedPhoto>> = {
+const demoPhotos: Record<UploadSlot, UploadedPhoto> = {
   ownDamage: {
     slot: 'ownDamage',
     label: '내 차량 파손 사진',
-    fileName: '내 차량 사진.png',
-    size: 348_000,
+    fileName: 'own-car.png',
+    size: 625_895,
     previewUrl: publicAssetPath('/demo-photos/own-car.png'),
     source: 'upload'
   },
   opponentVehicle: {
     slot: 'opponentVehicle',
     label: '상대 차량 사진',
-    fileName: '상대방 차량.png',
-    size: 292_000,
+    fileName: 'opponent.png',
+    size: 564_338,
     previewUrl: publicAssetPath('/demo-photos/opponent.png'),
     source: 'upload'
   },
   scene: {
     slot: 'scene',
     label: '사고 현장 사진',
-    fileName: '사고 주변.png',
-    size: 416_000,
+    fileName: 'scene.png',
+    size: 1_463_420,
     previewUrl: publicAssetPath('/demo-photos/scene.png'),
     source: 'upload'
   }
 };
+
+function createDemoPhoto(slot: UploadSlot, source: NonNullable<UploadedPhoto['source']> = 'upload'): UploadedPhoto {
+  return {
+    ...demoPhotos[slot],
+    source
+  };
+}
+
+function createCompleteDemoPhotos(
+  currentPhotos: Partial<Record<UploadSlot, UploadedPhoto>> = {},
+  fallbackSource: NonNullable<UploadedPhoto['source']> = 'upload'
+): Record<UploadSlot, UploadedPhoto> {
+  return uploadSlots.reduce(
+    (acc, item) => {
+      acc[item.slot] = createDemoPhoto(item.slot, currentPhotos[item.slot]?.source ?? fallbackSource);
+      return acc;
+    },
+    {} as Record<UploadSlot, UploadedPhoto>
+  );
+}
 
 function stepFromPathname(pathname: string): Step | null {
   const normalizedPathname = stripBasePath(pathname);
@@ -551,8 +571,8 @@ export default function Home() {
     let nextPhotos = photos;
     const hasPhotos = Object.values(nextPhotos).some(Boolean);
     if (!hasPhotos) {
-      nextPhotos = demoPhotos;
-      setPhotos(demoPhotos);
+      nextPhotos = createCompleteDemoPhotos();
+      setPhotos(nextPhotos);
     }
 
     const photoList = Object.values(nextPhotos).filter((photo): photo is UploadedPhoto => Boolean(photo));
@@ -699,12 +719,21 @@ export default function Home() {
   };
 
   const handlePhotoAnalysis = async () => {
+    const demoPhotoSet = createCompleteDemoPhotos(photos);
+
+    setPhotos(demoPhotoSet);
     setIsPhotoLoading(true);
     setIsAnalysisEditOpen(false);
-    const result = await mockAI.analyzePhotos(uploadedPhotos, info);
+    const result = await mockAI.analyzePhotos(Object.values(demoPhotoSet), info);
     setPhotoAnalysis(result);
     setIsPhotoLoading(false);
     navigate('analysis');
+  };
+
+  const handleApplyDemoPhoto = (slot: UploadSlot, source: NonNullable<UploadedPhoto['source']>) => {
+    setPhotos((prev) => ({ ...prev, [slot]: createDemoPhoto(slot, source) }));
+    setPhotoAnalysis(null);
+    setIsAnalysisEditOpen(false);
   };
 
   const handleConfirmAnalysis = () => {
@@ -999,11 +1028,7 @@ export default function Home() {
                     key={slot.slot}
                     {...slot}
                     photo={photos[slot.slot]}
-                    onChange={(photo) => {
-                      setPhotos((prev) => ({ ...prev, [photo.slot]: photo }));
-                      setPhotoAnalysis(null);
-                      setIsAnalysisEditOpen(false);
-                    }}
+                    onApplyDemoPhoto={(source) => handleApplyDemoPhoto(slot.slot, source)}
                   />
                 ))}
               </div>
